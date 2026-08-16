@@ -25,6 +25,15 @@
 
 개인 Fork·Commit·Pages는 사전 준비 상태에 따라 수업 중 또는 수업 후 완성합니다.
 
+## 🚀 추가된 프로젝트 산출물 (Universal ML Pipeline)
+
+본 저장소에는 **모든 반도체 공정에 적용 가능한 범용 머신러닝 파이프라인**과 **포토 공정(01_photo) 맞춤형 예측 모델**이 새롭게 추가되었습니다. 
+
+- **분석 보고서**: [`analysis_index.html`](analysis_index.html) (EDA, 다중공선성 VIF 검증, 그룹별 독립 회귀 분석, 클래스 불균형에 대응한 분류 모델 성능 요약)
+- **범용 에이전트 스킬**: [`.agents/skills/semiconductor-process-ml-pipeline/SKILL.md`](.agents/skills/semiconductor-process-ml-pipeline/SKILL.md) (어떤 공정 데이터든 스스로 문맥을 읽어내어 VIF 검사, 그룹핑, 모델 분리, 시각화를 수행하는 마스터 템플릿)
+- **포토 공정 특화 스킬**: [`.agents/skills/photo-process-ml-pipeline/SKILL.md`](.agents/skills/photo-process-ml-pipeline/SKILL.md) (PR Tone 분리, Domain Shift 방지 등 도메인 지식 반영)
+- **제출용 결과물**: `A_holdout_predictions.csv`, `B_holdout_predictions.csv`
+
 ## 저장소 안내
 
 - [`index.html`](index.html): 1차 강의용 반응형 GitHub Pages 자료
