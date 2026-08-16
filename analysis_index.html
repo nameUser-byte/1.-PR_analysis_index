@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>반도체 PR 공정 CD 예측 분석 리포트</title>
+<meta name="description" content="Positive/Negative PR Tone별 공정 데이터 EDA, 상관관계 분석, 5가지 머신러닝 모델 경쟁 학습 결과 리포트">
+<meta name="theme-color" content="#f3f4f0">
+<style>
+:root{
+  --bg:#f3f4f0; --bg-soft:#eceee8; --surface:#fff; --surface-2:#eef0ea;
+  --border:#d9dcd3; --border-soft:#e3e5de; --text:#12161f; --text-dim:#5b6270;
+  --text-faint:#8a92a0; --amber:#a3610a; --amber-soft:#f7ead2;
+  --cyan:#0a7a86; --cyan-soft:#dcf0f0; --danger:#b23c2c; --good:#2e7d52;
+  --radius-s:6px; --radius-m:10px; --radius-l:16px; --maxw:1200px;
+  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI","Pretendard",sans-serif;
+  --font-mono:"SF Mono","Fira Code",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);line-height:1.65;}
+a{color:inherit;text-decoration:none;}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px;}
+
+/* Nav */
+header.site-nav{position:sticky;top:0;z-index:50;background:rgba(243,244,240,0.92);
+  border-bottom:1px solid var(--border-soft);backdrop-filter:blur(6px);}
+.nav-inner{max-width:var(--maxw);margin:0 auto;padding:12px 28px;display:flex;align-items:center;gap:32px;}
+.nav-brand{font-family:var(--font-mono);font-size:13px;display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.nav-brand .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);}
+nav.sec-nav{display:flex;gap:20px;overflow-x:auto;}
+nav.sec-nav a{font-size:12.5px;color:var(--text-dim);white-space:nowrap;padding:4px 0;
+  border-bottom:2px solid transparent;transition:.2s;}
+nav.sec-nav a:hover{color:var(--cyan);border-bottom-color:var(--cyan);}
+
+/* Typography */
+.eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:0.14em;color:var(--cyan);
+  display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.eyebrow::before{content:"";width:20px;height:1px;background:var(--cyan);display:inline-block;}
+h2.section-title{font-size:clamp(24px,3.2vw,38px);line-height:1.22;margin-bottom:12px;}
+h2.section-title em{font-style:normal;color:var(--amber);}
+p.section-lede{color:var(--text-dim);font-size:15.5px;max-width:780px;line-height:1.8;margin-bottom:36px;}
+section{padding:56px 0;border-bottom:1px solid var(--border-soft);}
+.section-head{margin-bottom:40px;}
+
+/* Hero */
+.hero{padding:56px 0 48px;background:linear-gradient(160deg,var(--surface) 60%,var(--cyan-soft));}
+.hero-grid{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:start;}
+.hero h1{font-size:clamp(22px,3vw,34px);line-height:1.3;margin-bottom:12px;}
+.hero h1 em{font-style:normal;color:var(--cyan);}
+.hero p{font-size:15px;color:var(--text-dim);max-width:680px;line-height:1.75;}
+.stat-row{display:flex;gap:20px;margin-top:24px;flex-wrap:wrap;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);
+  padding:14px 20px;min-width:110px;}
+.stat .val{font-family:var(--font-mono);font-size:22px;font-weight:700;color:var(--cyan);}
+.stat .lbl{font-size:11.5px;color:var(--text-dim);margin-top:2px;}
+
+/* Cards */
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+@media(max-width:640px){.grid-2{grid-template-columns:1fr;}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);padding:22px 20px;}
+.card .tag{font-family:var(--font-mono);font-size:10px;letter-spacing:.09em;color:var(--cyan);margin-bottom:8px;display:block;}
+.card h4{font-size:16px;font-weight:700;margin-bottom:6px;}
+.card p{font-size:13.5px;color:var(--text-dim);}
+.card.border-l-cy{border-left:3px solid var(--cyan);}
+.card.border-l-am{border-left:3px solid var(--amber);}
+
+/* Lists */
+.check-list{display:grid;gap:9px;margin:14px 0;}
+.check-list li{display:flex;gap:10px;font-size:13.5px;color:var(--text-dim);
+  align-items:center;border-bottom:1px solid var(--border-soft);padding-bottom:6px;}
+.check-list li:last-child{border-bottom:none;}
+
+/* Tables */
+.table-container{overflow-x:auto;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-m);padding:8px;}
+.data-table{width:100%;border-collapse:collapse;font-size:11px;font-family:var(--font-mono);white-space:nowrap;}
+.data-table th,.data-table td{border-bottom:1px solid var(--border-soft);padding:7px 12px;text-align:left;}
+.data-table th{background:var(--bg-soft);font-weight:700;border-bottom:2px solid var(--border);}
+.data-table tbody tr:hover{background:var(--surface-2);}
+
+.metric-box{display:inline-block;background:var(--surface-2);padding:8px 16px;
+  border-radius:var(--radius-s);margin-top:10px;font-family:var(--font-mono);
+  font-size:14px;border:1px solid var(--border);}
+.metric-box strong{font-size:19px;color:var(--cyan);}
+
+/* Pipeline Steps */
+.pipeline{display:flex;gap:0;align-items:stretch;flex-wrap:wrap;margin:0 0 32px;}
+.pip-step{flex:1;min-width:140px;background:var(--surface);border:1px solid var(--border);
+  padding:14px 16px;position:relative;}
+.pip-step:not(:first-child)::before{content:"→";position:absolute;left:-12px;top:50%;
+  transform:translateY(-50%);font-size:14px;color:var(--text-faint);}
+.pip-step .n{font-family:var(--font-mono);font-size:10px;color:var(--cyan);margin-bottom:4px;}
+.pip-step .t{font-size:13px;font-weight:600;margin-bottom:3px;}
+.pip-step .d{font-size:11.5px;color:var(--text-dim);}
+.pip-step:first-child{border-radius:var(--radius-s) 0 0 var(--radius-s);}
+.pip-step:last-child{border-radius:0 var(--radius-s) var(--radius-s) 0;}
+
+/* Images */
+img.clickable{cursor:zoom-in;transition:.2s;width:100%;display:block;}
+img.clickable:hover{opacity:.87;}
+.img-card{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-m);overflow:hidden;}
+.img-caption{padding:14px 16px;}
+.img-caption h4{font-size:14.5px;font-weight:700;margin-bottom:4px;}
+.img-caption p{font-size:12.5px;color:var(--text-dim);}
+
+/* Insight box */
+.insight{margin-top:20px;padding:18px 20px;background:var(--surface-2);
+  border-radius:var(--radius-m);border:1px solid var(--border);
+  font-size:13.5px;color:var(--text-dim);line-height:1.75;}
+.insight strong{color:var(--text);}
+
+/* Modal */
+.modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.88);backdrop-filter:blur(6px);align-items:center;justify-content:center;}
+.modal-content{margin:auto;display:block;max-width:92%;max-height:92vh;
+  box-shadow:0 12px 40px rgba(0,0,0,0.5);border-radius:8px;}
+.modal-close{position:absolute;top:18px;right:30px;color:#f1f1f1;font-size:38px;
+  font-weight:bold;cursor:pointer;transition:.2s;}
+.modal-close:hover{color:var(--amber);}
+
+footer{padding:40px 28px;text-align:center;color:var(--text-faint);
+  font-family:var(--font-mono);font-size:12px;}
+
+/* VIF badge */
+.vif-warn{display:inline-block;font-size:10px;background:#fef3c7;color:#92400e;
+  border:1px solid #fcd34d;border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:middle;}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<header class="site-nav">
+  <div class="nav-inner">
+    <div class="nav-brand"><span class="dot"></span><span>AI DATA ANALYSIS</span></div>
+    <nav class="sec-nav">
+      <a href="#hero">개요</a>
+      <a href="#preprocess">전처리</a>
+      <a href="#data-preview">데이터</a>
+      <a href="#visualization">시각화</a>
+      <a href="#correlation">상관관계</a>
+      <a href="#machine-learning">ML 예측(CD)</a>
+      <a href="#holdout">분류(PASS/FAIL)</a>
+      <a href="#references">참고문헌</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero" id="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <div class="eyebrow">반도체 PR 공정 데이터 분석 리포트</div>
+        <h1>임계 치수(CD) 예측을 위한<br><em>머신러닝 파이프라인</em> 구축</h1>
+        <p>Positive/Negative PR Tone을 분리하여 공정 조건 변수로 resist_line_cd_nm을 예측합니다.<br>
+        데이터 누수 방지 · 다중공선성 통제 · 5가지 모델 경쟁 학습을 적용했습니다.</p>
+        <div class="stat-row">
+          <div class="stat"><div class="val">778</div><div class="lbl">정제 후 샘플 수</div></div>
+          <div class="stat"><div class="val">22</div><div class="lbl">전체 컬럼 수</div></div>
+          <div class="stat"><div class="val">2</div><div class="lbl">PR Tone 그룹</div></div>
+          <div class="stat"><div class="val">5</div><div class="lbl">경쟁 학습 모델</div></div>
+          <div class="stat"><div class="val" style="color:var(--amber);">0.82</div><div class="lbl">최고 R² (Positive)</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- A-2: 전처리 요약 -->
+<section id="preprocess">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">00 · DATA PREPROCESSING</div>
+      <h2 class="section-title">데이터 <em>전처리 파이프라인</em></h2>
+      <p class="section-lede">원본 데이터(805행)에서 이상값 제거 및 결측값 보완을 거쳐 정제 데이터(778행)를 생성했습니다.</p>
+    </div>
+    <div class="pipeline">
+      <div class="pip-step"><div class="n">STEP 01</div><div class="t">원본 로드</div><div class="d">train.csv<br>805행 · 22컬럼</div></div>
+      <div class="pip-step"><div class="n">STEP 02</div><div class="t">이상값 제거</div><div class="d">peb_temp_c 386°C<br>→ 행 삭제</div></div>
+      <div class="pip-step"><div class="n">STEP 03</div><div class="t">이상값 복원</div><div class="d">exposure_dose<br>normalized_dose로 역산</div></div>
+      <div class="pip-step"><div class="n">STEP 04</div><div class="t">결측값 대체</div><div class="d">수치형: lot 중앙값<br>범주형: 최빈값</div></div>
+      <div class="pip-step"><div class="n">STEP 05</div><div class="t">VIF 통제</div><div class="d">normalized_dose_pct<br>제거 (VIF &gt; 1000)</div></div>
+      <div class="pip-step"><div class="n">STEP 06</div><div class="t">정제 완료</div><div class="d">train_cleaned.csv<br>778행</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card border-l-cy">
+        <span class="tag">컬럼 분류</span>
+        <h4>식별자 (ID)</h4>
+        <p style="font-size:12.5px; margin-top:4px;"><code>sample_id</code>, <code>lot_id</code>, <code>tool_id</code>, <code>sequence</code></p>
+        <h4 style="margin-top:12px;">공정 조건 입력 (Input Features)</h4>
+        <p style="font-size:12.5px; margin-top:4px; color:var(--cyan);">exposure_dose, focus_um, coat_thickness, softbake_temp, peb_temp, develop_time, developer_conc, field_x/y, nominal_cd</p>
+        <h4 style="margin-top:12px;">결과 변수 — 학습 제외</h4>
+        <p style="font-size:12.5px; margin-top:4px; color:var(--danger);">resist_line_cd_nm (예측 타겟), cdu_3sigma, ler_nm, scum_probability, pattern_collapse_probability, defect_probability, spec_pass</p>
+      </div>
+      <div class="card border-l-am">
+        <span class="tag">다중공선성 (VIF) 결과</span>
+        <h4>심각한 VIF 발견 → 제거 조치</h4>
+        <ul class="check-list" style="margin-top:12px; font-size:13px;">
+          <li><code style="flex:1;">normalized_dose_pct</code> <b style="color:var(--danger);">VIF &gt; 1000</b></li>
+          <li><code style="flex:1;">peb_temp_c</code> <b style="color:var(--danger);">VIF ~1170</b></li>
+          <li><code style="flex:1;">softbake_temp_c</code> <b style="color:var(--danger);">VIF ~405</b></li>
+          <li><code style="flex:1;">focus_um</code> <b style="color:var(--good);">VIF ~1.0 (정상)</b></li>
+          <li><code style="flex:1;">field_x / field_y</code> <b style="color:var(--good);">VIF ~1.0 (정상)</b></li>
+        </ul>
+        <p style="font-size:12px; margin-top:8px; color:var(--text-dim);">트리 기반 모델(XGBoost/RF)은 VIF에 강건하나, 피처 중요도 해석 왜곡 방지를 위해 normalized_dose_pct를 제거함.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 01: DATA PREVIEW -->
+<section id="data-preview">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">01 · DATA PREVIEW</div>
+      <h2 class="section-title">정제 데이터 <em>5행 미리보기</em></h2>
+      <p class="section-lede">결측치와 이상값을 처리한 train_cleaned.csv의 상위 5행입니다.</p>
+    </div>
+    <div class="table-container">
+<table class="dataframe data-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>sample_id</th>
+      <th>lot_id</th>
+      <th>tool_id</th>
+      <th>sequence</th>
+      <th>pr_tone</th>
+      <th>retained_pattern_source</th>
+      <th>nominal_cd_nm</th>
+      <th>exposure_dose_mj_cm2</th>
+      <th>normalized_dose_pct</th>
+      <th>focus_um</th>
+      <th>coat_thickness_nm</th>
+      <th>softbake_temp_c</th>
+      <th>peb_temp_c</th>
+      <th>develop_time_s</th>
+      <th>developer_concentration_pct</th>
+      <th>field_x</th>
+      <th>field_y</th>
+      <th>resist_line_cd_nm</th>
+      <th>cdu_3sigma_nm</th>
+      <th>ler_nm</th>
+      <th>scum_probability</th>
+      <th>pattern_collapse_probability</th>
+      <th>defect_probability</th>
+      <th>spec_pass</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>S00489</td>
+      <td>L0024</td>
+      <td>T01</td>
+      <td>489</td>
+      <td>POSITIVE</td>
+      <td>UNEXPOSED</td>
+      <td>50.0</td>
+      <td>102.691192</td>
+      <td>102.691192</td>
+      <td>-0.040447</td>
+      <td>92.879060</td>
+      <td>100.196278</td>
+      <td>109.443946</td>
+      <td>35.223224</td>
+      <td>2.408649</td>
+      <td>-0.709753</td>
+      <td>0.245474</td>
+      <td>48.953214</td>
+      <td>3.100934</td>
+      <td>1.246858</td>
+      <td>0.363757</td>
+      <td>0.000647</td>
+      <td>0.080299</td>
+      <td>FAIL</td>
+    </tr>
+    <tr>
+      <td>S00624</td>
+      <td>L0031</td>
+      <td>T01</td>
+      <td>624</td>
+      <td>POSITIVE</td>
+      <td>UNEXPOSED</td>
+      <td>50.0</td>
+      <td>97.425357</td>
+      <td>97.425357</td>
+      <td>0.123277</td>
+      <td>100.752230</td>
+      <td>99.180757</td>
+      <td>107.726072</td>
+      <td>48.907885</td>
+      <td>2.362926</td>
+      <td>0.027606</td>
+      <td>0.315299</td>
+      <td>50.599678</td>
+      <td>3.686919</td>
+      <td>1.592575</td>
+      <td>0.231017</td>
+      <td>0.026269</td>
+      <td>0.113278</td>
+      <td>FAIL</td>
+    </tr>
+    <tr>
+      <td>S00623</td>
+      <td>L0031</td>
+      <td>T01</td>
+      <td>623</td>
+      <td>POSITIVE</td>
+      <td>UNEXPOSED</td>
+      <td>50.0</td>
+      <td>102.875702</td>
+      <td>102.875702</td>
+      <td>-0.035468</td>
+      <td>101.539379</td>
+      <td>98.355469</td>
+      <td>111.830158</td>
+      <td>56.554731</td>
+      <td>2.415340</td>
+      <td>-0.831918</td>
+      <td>-0.741168</td>
+      <td>48.380202</td>
+      <td>2.777548</td>
+      <td>1.203999</td>
+      <td>0.031906</td>
+      <td>0.053311</td>
+      <td>0.028353</td>
+      <td>PASS</td>
+    </tr>
+    <tr>
+      <td>S00213</td>
+      <td>L0010</td>
+      <td>T02</td>
+      <td>213</td>
+      <td>POSITIVE</td>
+      <td>UNEXPOSED</td>
+      <td>50.0</td>
+      <td>100.912311</td>
+      <td>100.912311</td>
+      <td>-0.002737</td>
+      <td>95.172174</td>
+      <td>95.613591</td>
+      <td>114.470335</td>
+      <td>42.346029</td>
+      <td>2.382750</td>
+      <td>0.435762</td>
+      <td>-0.055490</td>
+      <td>51.352991</td>
+      <td>1.651333</td>
+      <td>2.216947</td>
+      <td>0.198318</td>
+      <td>0.000194</td>
+      <td>0.026564</td>
+      <td>PASS</td>
+    </tr>
+    <tr>
+      <td>S00436</td>
+      <td>L0021</td>
+      <td>T01</td>
+      <td>436</td>
+      <td>NEGATIVE</td>
+      <td>EXPOSED</td>
+      <td>50.0</td>
+      <td>82.454342</td>
+      <td>105.710694</td>
+      <td>0.047920</td>
+      <td>112.096801</td>
+      <td>95.988539</td>
+      <td>103.122850</td>
+      <td>67.753642</td>
+      <td>2.370097</td>
+      <td>0.721702</td>
+      <td>0.011136</td>
+      <td>52.830730</td>
+      <td>2.726019</td>
+      <td>1.918345</td>
+      <td>0.028659</td>
+      <td>0.102112</td>
+      <td>0.044266</td>
+      <td>PASS</td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+    <div style="margin-top:14px;font-size:13px;color:var(--text-dim);background:var(--surface-2);
+      padding:16px;border-radius:var(--radius-m);border:1px solid var(--border-soft);">
+      <strong style="color:var(--text);font-family:var(--font-mono);font-size:13.5px;">각주 — 주요 공정 변수 설명</strong>
+      <ul style="margin:8px 0 0 18px;line-height:1.7;">
+        <li><code>pr_tone</code>: 감광액(PR) 특성 — POSITIVE(노광 부위 제거) / NEGATIVE(노광 부위 잔류)</li>
+        <li><code>exposure_dose_mj_cm2</code>: 노광 장비가 웨이퍼에 조사한 실제 빛 에너지 (mJ/cm²)</li>
+        <li><code>focus_um</code>: 노광 장비 렌즈의 초점 위치 편차 (µm). 0에 가까울수록 선폭 정밀도 높음</li>
+        <li><code>coat_thickness_nm</code>: 스핀 코팅된 감광액 두께 (nm)</li>
+        <li><code>softbake_temp_c / peb_temp_c</code>: 노광 전(Softbake) / 후(Post-Exposure Bake) 가열 온도 (°C)</li>
+        <li><code>develop_time_s</code>: 현상액 처리 시간 (초) — CD에 비선형적 영향을 미침</li>
+        <li><code>resist_line_cd_nm</code>: 현상 후 측정한 PR 라인의 선폭, Critical Dimension (nm) — <b>예측 타겟</b></li>
+        <li><code>spec_pass</code>: 공정 합격(PASS) / 불합격(FAIL) 판정 — 학습 제외 결과 변수</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 02: VISUALIZATION -->
+<section id="visualization">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">02 · EDA &amp; VISUALIZATION</div>
+      <h2 class="section-title">탐색적 데이터 분석 <em>시각화</em></h2>
+      <p class="section-lede">PR Tone별 분포 비교 · 핵심 공정 변수 박스플롯 · Dose-CD 회귀 산점도를 통해 데이터의 전반적 특성을 파악합니다.</p>
+    </div>
+    <div class="grid-2" style="margin-bottom:16px;">
+      <div class="img-card">
+        <img src="cd_dist.png" class="clickable" onclick="openModal(this.src)" alt="CD 분포 히스토그램">
+        <div class="img-caption"><h4>CD 분포 히스토그램</h4><p>Positive/Negative PR별 선폭 분포 비교. Positive는 50nm 부근에 집중, Negative는 분산이 큼.</p></div>
+      </div>
+      <div class="img-card">
+        <img src="cd_boxplot.png" class="clickable" onclick="openModal(this.src)" alt="CD 박스플롯">
+        <div class="img-caption"><h4>PR Tone별 CD 박스플롯</h4><p>두 그룹의 중앙값, IQR, 이상치(Outlier)를 통계적으로 비교.</p></div>
+      </div>
+    </div>
+    <div class="img-card" style="margin-bottom:16px;">
+      <img src="process_boxplots.png" class="clickable" onclick="openModal(this.src)" alt="공정 변수 박스플롯">
+      <div class="img-caption">
+        <h4>주요 공정 변수 PR Tone별 분포 비교</h4>
+        <p>Dose, Focus, PEB Temp 등 6가지 핵심 공정 변수의 분포가 Positive와 Negative 그룹 간에 어떻게 다른지 한눈에 비교. 특히 Dose 분포의 차이가 두드러집니다.</p>
+      </div>
+    </div>
+    <div class="img-card">
+      <img src="dose_vs_cd.png" class="clickable" onclick="openModal(this.src)" alt="Dose vs CD 회귀 산점도">
+      <div class="img-caption">
+        <h4>노광량(Dose) vs 선폭(CD) 회귀 산점도</h4>
+        <p>Positive PR(청록)은 Dose 증가 → CD 감소(음의 상관). Negative PR(주황)은 Dose 증가 → CD 증가(양의 상관). 두 그룹의 반대되는 광화학적 메커니즘을 시각적으로 확인.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 03: CORRELATION -->
+<section id="correlation">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">03 · CORRELATION ANALYSIS</div>
+      <h2 class="section-title">PR Tone별 <em>전체 상관관계</em></h2>
+      <p class="section-lede">임계 치수(resist_line_cd_nm)와 모든 수치형 변수의 Pearson 상관계수 목록입니다.<br>
+        <span style="color:var(--danger);font-size:14px;">⚠ 결과 변수(Output)는 CD와 상관이 높게 나오더라도 모델 학습에 사용하면 데이터 누수(Data Leakage)가 발생합니다.</span></p>
+    </div>
+    <div class="img-card" style="margin-bottom:20px;">
+      <img src="corr_heatmap.png" class="clickable" onclick="openModal(this.src)" alt="상관관계 히트맵">
+      <div class="img-caption">
+        <h4>공정 조건 변수 간 상관관계 히트맵</h4>
+        <p>셀 색이 진할수록 강한 양(파랑)/음(빨강)의 상관관계를 나타냅니다. 대각선에 가까운 변수끼리 높은 상관이 나타나면 다중공선성을 의심해야 합니다.</p>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card border-l-cy">
+        <span class="tag">POSITIVE PR</span>
+        <h4>Dose 증가 → CD 감소 (음의 상관)</h4>
+<p style="font-size:11px; font-weight:700; color:var(--cyan); margin:8px 0 4px; letter-spacing:.06em;">INPUT — 공정 조건 변수</p><ul class="check-list" style="margin:0 0 14px; max-height:180px; overflow-y:auto; padding-right:8px;"><li><code style="flex:1;">exposure_dose_mj_cm2</code> <b style="color:var(--danger)">-0.6677</b></li><li><code style="flex:1;">develop_time_s</code> <b style="color:var(--danger)">-0.1741</b></li><li><code style="flex:1;">coat_thickness_nm</code> <b style="color:var(--good)">+0.1082</b></li><li><code style="flex:1;">peb_temp_c</code> <b style="color:var(--good)">+0.0483</b></li><li><code style="flex:1;">field_y</code> <b style="color:var(--danger)">-0.0349</b></li><li><code style="flex:1;">focus_um</code> <b style="color:var(--danger)">-0.0277</b></li><li><code style="flex:1;">developer_concentration_pct</code> <b style="color:var(--danger)">-0.0260</b></li><li><code style="flex:1;">field_x</code> <b style="color:var(--good)">+0.0138</b></li><li><code style="flex:1;">softbake_temp_c</code> <b style="color:var(--good)">+0.0075</b></li></ul><p style="font-size:11px; font-weight:700; color:var(--danger); margin:8px 0 4px; letter-spacing:.06em;">OUTPUT — 결과 변수 (학습 제외 / 데이터 누수 주의)</p><ul class="check-list" style="margin:0; background:rgba(178,60,44,0.05); padding:8px; border-radius:6px; border:1px dashed #b23c2c44;"><li><code style="flex:1; font-size:12px;">scum_probability</code> <b style="color:var(--good); font-size:12px;">+0.6649</b></li><li><code style="flex:1; font-size:12px;">defect_probability</code> <b style="color:var(--good); font-size:12px;">+0.4910</b></li><li><code style="flex:1; font-size:12px;">pattern_collapse_probability</code> <b style="color:var(--danger); font-size:12px;">-0.2413</b></li><li><code style="flex:1; font-size:12px;">cdu_3sigma_nm</code> <b style="color:var(--good); font-size:12px;">+0.1477</b></li><li><code style="flex:1; font-size:12px;">ler_nm</code> <b style="color:var(--good); font-size:12px;">+0.0004</b></li></ul>
+      </div>
+      <div class="card border-l-am">
+        <span class="tag" style="color:var(--amber);">NEGATIVE PR</span>
+        <h4>Dose 증가 → CD 증가 (양의 상관)</h4>
+<p style="font-size:11px; font-weight:700; color:var(--cyan); margin:8px 0 4px; letter-spacing:.06em;">INPUT — 공정 조건 변수</p><ul class="check-list" style="margin:0 0 14px; max-height:180px; overflow-y:auto; padding-right:8px;"><li><code style="flex:1;">exposure_dose_mj_cm2</code> <b style="color:var(--good)">+0.7140</b></li><li><code style="flex:1;">coat_thickness_nm</code> <b style="color:var(--good)">+0.1501</b></li><li><code style="flex:1;">develop_time_s</code> <b style="color:var(--danger)">-0.0475</b></li><li><code style="flex:1;">softbake_temp_c</code> <b style="color:var(--good)">+0.0448</b></li><li><code style="flex:1;">field_x</code> <b style="color:var(--good)">+0.0430</b></li><li><code style="flex:1;">focus_um</code> <b style="color:var(--danger)">-0.0404</b></li><li><code style="flex:1;">developer_concentration_pct</code> <b style="color:var(--danger)">-0.0311</b></li><li><code style="flex:1;">peb_temp_c</code> <b style="color:var(--danger)">-0.0181</b></li><li><code style="flex:1;">field_y</code> <b style="color:var(--danger)">-0.0047</b></li></ul><p style="font-size:11px; font-weight:700; color:var(--danger); margin:8px 0 4px; letter-spacing:.06em;">OUTPUT — 결과 변수 (학습 제외 / 데이터 누수 주의)</p><ul class="check-list" style="margin:0; background:rgba(178,60,44,0.05); padding:8px; border-radius:6px; border:1px dashed #b23c2c44;"><li><code style="flex:1; font-size:12px;">scum_probability</code> <b style="color:var(--danger); font-size:12px;">-0.6122</b></li><li><code style="flex:1; font-size:12px;">pattern_collapse_probability</code> <b style="color:var(--danger); font-size:12px;">-0.2586</b></li><li><code style="flex:1; font-size:12px;">defect_probability</code> <b style="color:var(--danger); font-size:12px;">-0.1573</b></li><li><code style="flex:1; font-size:12px;">ler_nm</code> <b style="color:var(--good); font-size:12px;">+0.0809</b></li><li><code style="flex:1; font-size:12px;">cdu_3sigma_nm</code> <b style="color:var(--good); font-size:12px;">+0.0739</b></li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 04: ML PIPELINE -->
+<section id="machine-learning">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">04 · MACHINE LEARNING PIPELINE</div>
+      <h2 class="section-title">5가지 모델 <em>경쟁 학습 결과</em></h2>
+      <p class="section-lede">
+        다중공선성 통제 후 공정 조건 변수만 입력하여 5가지 알고리즘을 동일 조건(70% 학습 / 30% 검증, random_state=42)으로 경쟁 학습했습니다.<br>
+        각 PR 그룹별 검증 R²가 가장 높은 모델을 최종 채택합니다.
+      </p>
+    </div>
+
+    <!-- 모델 비교 표 -->
+    <div style="overflow-x:auto;margin-bottom:24px;">
+      <table style="width:100%;border-collapse:collapse;font-size:13.5px;font-family:var(--font-mono);">
+        <thead>
+          <tr style="background:var(--bg-soft);border-bottom:2px solid var(--border);">
+            <th style="padding:10px 14px;text-align:left;">모델</th>
+            <th style="padding:10px 14px;text-align:center;">POSITIVE R²</th>
+            <th style="padding:10px 14px;text-align:center;">NEGATIVE R²</th>
+            <th style="padding:10px 14px;text-align:left;">알고리즘 특성</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border-soft);">
+            <td style="padding:10px 14px;">Random Forest</td>
+            <td style="padding:10px 14px;text-align:center;">0.7659</td>
+            <td style="padding:10px 14px;text-align:center;">0.5435</td>
+            <td style="padding:10px 14px;color:var(--text-dim);">독립 트리 배깅(Bagging), 과적합 강건</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border-soft);">
+            <td style="padding:10px 14px;">XGBoost</td>
+            <td style="padding:10px 14px;text-align:center;">0.7725</td>
+            <td style="padding:10px 14px;text-align:center;">0.5622</td>
+            <td style="padding:10px 14px;color:var(--text-dim);">잔차 순차 학습(Boosting), L1/L2 정규화</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border-soft);">
+            <td style="padding:10px 14px;">LightGBM</td>
+            <td style="padding:10px 14px;text-align:center;">0.7923</td>
+            <td style="padding:10px 14px;text-align:center;color:var(--danger);">0.5155 ▼</td>
+            <td style="padding:10px 14px;color:var(--text-dim);">Leaf-wise 성장, 대용량 고속 — 소규모 불리</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border-soft);">
+            <td style="padding:10px 14px;"><b>Stacking Ensemble</b></td>
+            <td style="padding:10px 14px;text-align:center;">0.8056</td>
+            <td style="padding:10px 14px;text-align:center;color:var(--amber);font-weight:700;">0.5752 ★</td>
+            <td style="padding:10px 14px;color:var(--text-dim);">RF+XGB+LGBM → Ridge CV 최종 예측</td>
+          </tr>
+          <tr style="background:var(--cyan-soft);">
+            <td style="padding:10px 14px;"><b>XGBoost + Optuna</b></td>
+            <td style="padding:10px 14px;text-align:center;color:var(--cyan);font-weight:700;">0.8158 ★</td>
+            <td style="padding:10px 14px;text-align:center;">0.5490</td>
+            <td style="padding:10px 14px;color:var(--text-dim);">베이지안 탐색 50 trial, 자동 최적 파라미터</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 예측 vs 실측 + 학습 곡선 + Feature Importance -->
+    <div class="img-card" style="margin-bottom:16px;">
+      <img src="pred_vs_actual.png" class="clickable" onclick="openModal(this.src)" alt="예측 vs 실측 산점도">
+      <div class="img-caption">
+        <h4>예측값 vs 실측값 산점도 (Predicted vs Actual)</h4>
+        <p>완벽한 모델이라면 모든 점이 y=x 대각선(점선) 위에 정렬됩니다. Positive(R² 0.82)는 대각선에 밀집, Negative(R² 0.58)는 분산이 크게 나타납니다.</p>
+      </div>
+    </div>
+    <div class="grid-2" style="margin-bottom:16px;">
+      <div class="img-card">
+        <img src="learning_curve.png" class="clickable" onclick="openModal(this.src)" alt="학습 곡선">
+        <div class="img-caption">
+          <h4>학습 곡선 (Learning Curve)</h4>
+          <p>훈련 데이터가 늘어남에 따른 Train/Validation R² 변화. Negative PR의 Validation 곡선이 수렴하지 않는 것은 데이터 부족의 직접적 증거입니다.</p>
+        </div>
+      </div>
+      <div class="img-card">
+        <img src="feature_importance.png" class="clickable" onclick="openModal(this.src)" alt="피처 중요도">
+        <div class="img-caption">
+          <h4>Feature Importance (Top 10)</h4>
+          <p>두 그룹 모두 Dose와 tool_id가 최상위. Positive는 develop_time, Negative는 coat_thickness의 상대적 영향이 더 큽니다.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Best Model Cards -->
+    <div class="grid-2" style="margin-bottom:20px;">
+      <div class="card border-l-cy">
+        <span class="tag">POSITIVE PR — 최종 선택</span>
+        <h4>XGBoost + Optuna 베이지안 튜닝</h4>
+        <div class="metric-box">R² Score: <strong>0.8158</strong><br>depth=3, lr=0.022, n=950</div>
+        <ul class="check-list" style="margin-top:14px;">
+          <li><code style="flex:1;">tool_id_T01</code> <b>0.256</b></li>
+          <li><code style="flex:1;">exposure_dose_mj_cm2</code> <b>0.181</b></li>
+          <li><code style="flex:1;">tool_id_T03</code> <b>0.147</b></li>
+          <li><code style="flex:1;">tool_id_T02</code> <b>0.105</b></li>
+          <li><code style="flex:1;">develop_time_s</code> <b>0.064</b></li>
+        </ul>
+      </div>
+      <div class="card border-l-am">
+        <span class="tag" style="color:var(--amber);">NEGATIVE PR — 최종 선택</span>
+        <h4>Stacking Ensemble (RF + XGB + LGBM)</h4>
+        <div class="metric-box">R² Score: <strong style="color:var(--amber);">0.5752</strong><br>Meta-learner: Ridge CV</div>
+        <ul class="check-list" style="margin-top:14px;">
+          <li><code style="flex:1;">exposure_dose_mj_cm2</code> <b>0.309</b></li>
+          <li><code style="flex:1;">tool_id_T03</code> <b>0.221</b></li>
+          <li><code style="flex:1;">tool_id_T01</code> <b>0.197</b></li>
+          <li><code style="flex:1;">develop_time_s</code> <b>0.072</b></li>
+          <li><code style="flex:1;">tool_id_T02</code> <b>0.071</b></li>
+        </ul>
+      </div>
+    </div>
+    <div class="insight">
+      <strong>해석 및 결론</strong><br>
+      Positive PR은 XGBoost+Optuna로 R² <b>0.8158</b>을 달성했습니다. 노광량(<code>exposure_dose</code>)과 설비 편차(<code>tool_id</code>)가 CD 예측의 핵심 변수입니다.<br><br>
+      Negative PR은 5가지 모든 알고리즘에서 R²가 0.52~0.58 구간으로 수렴합니다. 이는 알고리즘의 문제가 아닌 <b>데이터 한계(Performance Ceiling)</b>입니다. 학습 곡선이 수렴하지 않아 추가 데이터(설비 내부 센서, 챔버 로그)가 확보되어야 R²를 의미 있게 개선할 수 있습니다.
+    </div>
+  </div>
+</section>
+
+<!-- 05: HOLDOUT PREDICTION -->
+<section id="holdout" style="background-color: var(--surface-2);">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">05 · HOLDOUT PREDICTION (CLASSIFICATION)</div>
+      <h2 class="section-title">미지의 데이터 <em>합격/불합격 예측</em></h2>
+      <p class="section-lede">
+        <code>spec_pass</code>(합격 여부) 변수가 없는 블라인드 테스트용 <b>Holdout A 데이터(200건)</b>와 <b>Holdout B 데이터(200건)</b>의 결과를 
+        각각 분리하여 도출했습니다.
+      </p>
+    </div>
+    
+    <div class="card border-l-cy" style="margin-bottom:16px;">
+        <span class="tag">모델 선택 근거 (실험 검증 기반)</span>
+        <h4>5가지 모델 비교 후 최적 선택</h4>
+        <ul class="check-list" style="margin-top:12px;">
+          <li><code style="flex:1;">POSITIVE &rarr; <b>RF (class_weight='balanced')</b></code> <b style="color:var(--cyan);">Acc 79.95% / F1 68.8%</b></li>
+          <li><code style="flex:1;">NEGATIVE &rarr; <b>XGBoost (baseline)</b></code> <b style="color:var(--amber);">Acc 76.58% / F1 67.8%</b></li>
+        </ul>
+        <p style="font-size:12px; margin-top:10px; color:var(--text-dim);">불균형(FAIL 67.4%) 보정을 위해 POSITIVE는 RF의 <code>class_weight='balanced'</code>을, NEGATIVE는 데이터 부족으로 인해 모델 변경/튜닝이 모두 역효과를 내서 XGBoost 기본을 유지합니다.</p>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:24px;">
+      <div class="card border-l-am">
+        <span class="tag" style="color:var(--amber);">데이터셋 A</span>
+        <h4>Holdout A (총 198건 유효)</h4>
+        <div class="stat-row" style="margin-top:16px;">
+          <div class="stat"><div class="val" style="color:var(--danger);">115</div><div class="lbl">예측 FAIL</div></div>
+          <div class="stat"><div class="val" style="color:var(--good);">83</div><div class="lbl">예측 PASS</div></div>
+        </div>
+        <p style="font-size:12px; margin-top:14px; color:var(--text-dim);">※ <code>A_holdout_predictions.csv</code> 저장됨</p>
+      </div>
+      
+      <div class="card border-l-am">
+        <span class="tag" style="color:var(--amber);">데이터셋 B</span>
+        <h4>Holdout B (총 200건 유효)</h4>
+        <div class="stat-row" style="margin-top:16px;">
+          <div class="stat"><div class="val" style="color:var(--danger);">117</div><div class="lbl">예측 FAIL</div></div>
+          <div class="stat"><div class="val" style="color:var(--good);">83</div><div class="lbl">예측 PASS</div></div>
+        </div>
+        <p style="font-size:12px; margin-top:14px; color:var(--text-dim);">※ <code>B_holdout_predictions.csv</code> 저장됨</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 06: REFERENCES -->
+<section id="references" style="border-bottom:none;">
+  <div class="wrap">
+    <div class="section-head" style="margin-bottom:24px;">
+      <div class="eyebrow">06 · FUTURE WORK &amp; REFERENCES</div>
+      <h2 class="section-title">미실험 대안 모델 및 <em>참고문헌</em></h2>
+    </div>
+    <div class="grid-2" style="margin-bottom:24px;">
+      <div class="card">
+        <span class="tag">미실험 — 추후 시도 권장</span>
+        <h4>추가 탐색 가능한 알고리즘</h4>
+        <ul style="margin:12px 0 0 16px;font-size:13.5px;color:var(--text-dim);line-height:1.8;">
+          <li><b>CatBoost</b>: 범주형 변수(tool_id 등)를 자동 처리, 소규모 데이터에 강건</li>
+          <li><b>SVR (Kernel RBF)</b>: 비선형 고차원 맵핑, Negative 그룹 시도 가치 있음</li>
+          <li><b>MLP (Neural Network)</b>: 복잡한 상호작용 자동 학습 — 데이터가 더 늘어날 경우 유리</li>
+          <li><b>Gaussian Process Regression</b>: 소규모 데이터, 불확실성 정량화에 적합</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag" style="color:var(--amber);">이미 실험 완료</span>
+        <h4>실험한 5가지 모델 요약</h4>
+        <ul style="margin:12px 0 0 16px;font-size:13.5px;color:var(--text-dim);line-height:1.8;">
+          <li>Random Forest — Bagging 앙상블</li>
+          <li>XGBoost — Gradient Boosting (기본)</li>
+          <li>LightGBM — Leaf-wise Gradient Boosting</li>
+          <li>Stacking (RF+XGB+LGBM+Ridge) — 메타 학습</li>
+          <li>XGBoost + Optuna — 베이지안 하이퍼파라미터 탐색</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card" style="font-size:13.5px;color:var(--text-dim);line-height:1.8;">
+      <strong style="color:var(--text);font-size:14.5px;">참고문헌 (References)</strong>
+      <ol style="margin:12px 0 0 18px;">
+        <li>Chen, T., &amp; Guestrin, C. (2016). <i>XGBoost: A Scalable Tree Boosting System.</i> KDD 2016. <a href="https://arxiv.org/abs/1603.02754" style="color:var(--cyan);">arxiv.org/abs/1603.02754</a></li>
+        <li>Breiman, L. (2001). <i>Random Forests.</i> Machine Learning, 45(1), 5–32.</li>
+        <li>Ke, G., et al. (2017). <i>LightGBM: A Highly Efficient Gradient Boosting Decision Tree.</i> NeurIPS 2017.</li>
+        <li>Akiba, T., et al. (2019). <i>Optuna: A Next-generation Hyperparameter Optimization Framework.</i> KDD 2019.</li>
+        <li>Mack, C. A. (2007). <i>Fundamental Principles of Optical Lithography.</i> Wiley. (반도체 노광 공정 및 CD 형성 원리)</li>
+        <li>Wolpert, D. H. (1992). <i>Stacked Generalization.</i> Neural Networks, 5(2), 241–259.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<footer>
+  반도체 AI 프로젝트 · CD Prediction ML Report &nbsp;·&nbsp; Generated 2026-08-15
+</footer>
+
+<!-- Modal -->
+<div id="imageModal" class="modal" onclick="closeModal()">
+  <span class="modal-close">&times;</span>
+  <img class="modal-content" id="modalImg">
+</div>
+
+<script>
+function openModal(src){
+  document.getElementById('imageModal').style.display='flex';
+  document.getElementById('modalImg').src=src;
+}
+function closeModal(){
+  document.getElementById('imageModal').style.display='none';
+}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
+
+// Smooth scroll for nav
+document.querySelectorAll('nav.sec-nav a').forEach(a=>{
+  a.addEventListener('click',function(e){
+    const target=document.querySelector(this.getAttribute('href'));
+    if(target){e.preventDefault();target.scrollIntoView({behavior:'smooth',block:'start'});}
+  });
+});
+</script>
+</body>
+</html>
