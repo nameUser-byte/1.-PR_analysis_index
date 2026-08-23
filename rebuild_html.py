@@ -256,7 +256,7 @@ footer{padding:40px 28px;text-align:center;color:var(--text-faint);
     </div>
     <div class="pipeline">
       <div class="pip-step"><div class="n">STEP 01</div><div class="t">원본 로드</div><div class="d">train.csv<br>805행 · 22컬럼</div></div>
-      <div class="pip-step"><div class="n">STEP 02</div><div class="t">이상값 제거</div><div class="d">peb_temp_c 386°C<br>→ 행 삭제</div></div>
+      <div class="pip-step"><div class="n">STEP 02</div><div class="t">이상치(Outlier) 제거</div><div class="d">peb_temp_c 386°C<br>CD &lt;40 또는 &gt;60 삭제</div></div>
       <div class="pip-step"><div class="n">STEP 03</div><div class="t">이상값 복원</div><div class="d">exposure_dose<br>normalized_dose로 역산</div></div>
       <div class="pip-step"><div class="n">STEP 04</div><div class="t">결측값 대체</div><div class="d">수치형: lot 중앙값<br>범주형: 최빈값</div></div>
       <div class="pip-step"><div class="n">STEP 05</div><div class="t">VIF 통제</div><div class="d">normalized_dose_pct<br>제거 (VIF &gt; 1000)</div></div>

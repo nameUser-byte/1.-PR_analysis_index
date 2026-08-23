@@ -177,7 +177,7 @@ footer{padding:40px 28px;text-align:center;color:var(--text-faint);
     </div>
     <div class="pipeline">
       <div class="pip-step"><div class="n">STEP 01</div><div class="t">원본 로드</div><div class="d">train.csv<br>805행 · 22컬럼</div></div>
-      <div class="pip-step"><div class="n">STEP 02</div><div class="t">이상값 제거</div><div class="d">peb_temp_c 386°C<br>→ 행 삭제</div></div>
+      <div class="pip-step"><div class="n">STEP 02</div><div class="t">이상치(Outlier) 제거</div><div class="d">peb_temp_c 386°C<br>CD &lt;40 또는 &gt;60 삭제</div></div>
       <div class="pip-step"><div class="n">STEP 03</div><div class="t">이상값 복원</div><div class="d">exposure_dose<br>normalized_dose로 역산</div></div>
       <div class="pip-step"><div class="n">STEP 04</div><div class="t">결측값 대체</div><div class="d">수치형: lot 중앙값<br>범주형: 최빈값</div></div>
       <div class="pip-step"><div class="n">STEP 05</div><div class="t">VIF 통제</div><div class="d">normalized_dose_pct<br>제거 (VIF &gt; 1000)</div></div>
@@ -468,116 +468,44 @@ footer{padding:40px 28px;text-align:center;color:var(--text-faint);
 <section id="machine-learning">
   <div class="wrap">
     <div class="section-head">
-      <div class="eyebrow">04 · MACHINE LEARNING PIPELINE</div>
-      <h2 class="section-title">5가지 모델 <em>경쟁 학습 결과</em></h2>
-      <p class="section-lede">
-        다중공선성 통제 후 공정 조건 변수만 입력하여 5가지 알고리즘을 동일 조건(70% 학습 / 30% 검증, random_state=42)으로 경쟁 학습했습니다.<br>
-        각 PR 그룹별 검증 R²가 가장 높은 모델을 최종 채택합니다.
-      </p>
+      <div class="eyebrow cyan">04 · MACHINE LEARNING PIPELINE</div>
+      <h2 class="section-title">CD 예측 모델 <em>학습 결과</em></h2>
+      <p class="section-lede">데이터 누수 방지를 위해 공정 조건 피처만 활용하였으며, 데이터를 Positive/Negative 그룹으로 나눈 후 70% 학습(Train), 30% 검증(Validation) 세트로 분할했습니다.<br><br>
+      <strong style="color: var(--cyan);">💡 최적화 및 모델 선정 기준:</strong> 이전 모델의 정확도를 극대화하기 위해 다항 회귀(Polynomial Features) 피처 엔지니어링과 GridSearchCV(하이퍼파라미터 튜닝)를 추가했습니다. Random Forest와 XGBoost가 경쟁 학습하여 가장 성능(R²)이 높은 모델이 자동 채택되었습니다.</p>
     </div>
-
-    <!-- 모델 비교 표 -->
-    <div style="overflow-x:auto;margin-bottom:24px;">
-      <table style="width:100%;border-collapse:collapse;font-size:13.5px;font-family:var(--font-mono);">
-        <thead>
-          <tr style="background:var(--bg-soft);border-bottom:2px solid var(--border);">
-            <th style="padding:10px 14px;text-align:left;">모델</th>
-            <th style="padding:10px 14px;text-align:center;">POSITIVE R²</th>
-            <th style="padding:10px 14px;text-align:center;">NEGATIVE R²</th>
-            <th style="padding:10px 14px;text-align:left;">알고리즘 특성</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr style="border-bottom:1px solid var(--border-soft);">
-            <td style="padding:10px 14px;">Random Forest</td>
-            <td style="padding:10px 14px;text-align:center;">0.8117</td>
-            <td style="padding:10px 14px;text-align:center;">0.7434</td>
-            <td style="padding:10px 14px;color:var(--text-dim);">독립 트리 배깅(Bagging), 과적합 강건</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border-soft);">
-            <td style="padding:10px 14px;">XGBoost</td>
-            <td style="padding:10px 14px;text-align:center;">0.7954</td>
-            <td style="padding:10px 14px;text-align:center;">0.7382</td>
-            <td style="padding:10px 14px;color:var(--text-dim);">잔차 순차 학습(Boosting), L1/L2 정규화</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border-soft);">
-            <td style="padding:10px 14px;">LightGBM</td>
-            <td style="padding:10px 14px;text-align:center;">0.8035</td>
-            <td style="padding:10px 14px;text-align:center;color:var(--danger);">0.5155 ▼</td>
-            <td style="padding:10px 14px;color:var(--text-dim);">Leaf-wise 성장, 대용량 고속 — 소규모 불리</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border-soft);">
-            <td style="padding:10px 14px;"><b>Stacking Ensemble</b></td>
-            <td style="padding:10px 14px;text-align:center;">0.8150</td>
-            <td style="padding:10px 14px;text-align:center;color:var(--amber);font-weight:700;">0.5752 ★</td>
-            <td style="padding:10px 14px;color:var(--text-dim);">RF+XGB+LGBM → Ridge CV 최종 예측</td>
-          </tr>
-          <tr style="background:var(--cyan-soft);">
-            <td style="padding:10px 14px;"><b>XGBoost + Optuna</b></td>
-            <td style="padding:10px 14px;text-align:center;color:var(--cyan);font-weight:700;">0.8158 ★</td>
-            <td style="padding:10px 14px;text-align:center;">0.7810</td>
-            <td style="padding:10px 14px;color:var(--text-dim);">베이지안 탐색 50 trial, 자동 최적 파라미터</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- 예측 vs 실측 + 학습 곡선 + Feature Importance -->
-    <div class="img-card" style="margin-bottom:16px;">
-      <img src="pred_vs_actual.png" class="clickable" onclick="openModal(this.src)" alt="예측 vs 실측 산점도">
-      <div class="img-caption">
-        <h4>예측값 vs 실측값 산점도 (Predicted vs Actual)</h4>
-        <p>완벽한 모델이라면 모든 점이 y=x 대각선(점선) 위에 정렬됩니다. Positive(R² 0.82)는 대각선에 밀집, Negative(R² 0.58)는 분산이 크게 나타납니다.</p>
-      </div>
-    </div>
-    <div class="grid-2" style="margin-bottom:16px;">
-      <div class="img-card">
-        <img src="learning_curve.png" class="clickable" onclick="openModal(this.src)" alt="학습 곡선">
-        <div class="img-caption">
-          <h4>학습 곡선 (Learning Curve)</h4>
-          <p>훈련 데이터가 늘어남에 따른 Train/Validation R² 변화. Negative PR의 Validation 곡선이 수렴하지 않는 것은 데이터 부족의 직접적 증거입니다.</p>
+    <div class="grid-2">
+      <div class="card border-l cy">
+        <span class="tag cyan">POSITIVE PR 예측 모델</span>
+        <h4>XGBoost</h4>
+        <div class="metric-box">
+          R² Score: <strong>0.8207</strong> <br>
+          RMSE: 1.1066 nm
         </div>
+        <h5 style="margin-top:20px; margin-bottom: 5px; font-size:13px; color:var(--text-dim);">Top 5 Feature Importances (중요도)</h5>
+        <ul class="check-list" style="margin-top:14px;">
+  <li><code style="flex:1;">exposure_dose_mj_cm2</code> <b>0.1569</b></li>
+  <li><code style="flex:1;">tool_id_T01</code> <b>0.1467</b></li>
+  <li><code style="flex:1;">exposure_dose_mj_cm2 develop_time_s</code> <b>0.1075</b></li>
+  <li><code style="flex:1;">tool_id_T03</code> <b>0.1031</b></li>
+  <li><code style="flex:1;">develop_time_s</code> <b>0.0405</b></li>
+</ul>
       </div>
-      <div class="img-card">
-        <img src="feature_importance.png" class="clickable" onclick="openModal(this.src)" alt="피처 중요도">
-        <div class="img-caption">
-          <h4>Feature Importance (Top 10)</h4>
-          <p>두 그룹 모두 Dose와 tool_id가 최상위. Positive는 develop_time, Negative는 coat_thickness의 상대적 영향이 더 큽니다.</p>
+      <div class="card border-l" style="border-left-color:var(--amber);">
+        <span class="tag" style="color:var(--amber);">NEGATIVE PR 예측 모델</span>
+        <h4>XGBoost</h4>
+        <div class="metric-box">
+          R² Score: <strong style="color:var(--amber);">0.7757</strong> <br>
+          RMSE: 1.4406 nm
         </div>
-      </div>
-    </div>
-
-    <!-- Best Model Cards -->
-    <div class="grid-2" style="margin-bottom:20px;">
-      <div class="card border-l-cy">
-        <span class="tag">POSITIVE PR — 최종 선택</span>
-        <h4>XGBoost + Optuna 베이지안 튜닝</h4>
-        <div class="metric-box">R² Score: <strong>0.8207</strong><br>depth=3, lr=0.022, n=950</div>
+        <h5 style="margin-top:20px; margin-bottom: 5px; font-size:13px; color:var(--text-dim);">Top 5 Feature Importances (중요도)</h5>
         <ul class="check-list" style="margin-top:14px;">
-          <li><code style="flex:1;">tool_id_T01</code> <b>0.256</b></li>
-          <li><code style="flex:1;">exposure_dose_mj_cm2</code> <b>0.181</b></li>
-          <li><code style="flex:1;">tool_id_T03</code> <b>0.147</b></li>
-          <li><code style="flex:1;">tool_id_T02</code> <b>0.105</b></li>
-          <li><code style="flex:1;">develop_time_s</code> <b>0.064</b></li>
-        </ul>
+  <li><code style="flex:1;">exposure_dose_mj_cm2</code> <b>0.2429</b></li>
+  <li><code style="flex:1;">tool_id_T01</code> <b>0.1632</b></li>
+  <li><code style="flex:1;">exposure_dose_mj_cm2 develop_time_s</code> <b>0.1159</b></li>
+  <li><code style="flex:1;">develop_time_s</code> <b>0.1042</b></li>
+  <li><code style="flex:1;">tool_id_T03</code> <b>0.0573</b></li>
+</ul>
       </div>
-      <div class="card border-l-am">
-        <span class="tag" style="color:var(--amber);">NEGATIVE PR — 최종 선택</span>
-        <h4>Stacking Ensemble (RF + XGB + LGBM)</h4>
-        <div class="metric-box">R² Score: <strong style="color:var(--amber);">0.7757</strong><br>Meta-learner: Ridge CV</div>
-        <ul class="check-list" style="margin-top:14px;">
-          <li><code style="flex:1;">exposure_dose_mj_cm2</code> <b>0.309</b></li>
-          <li><code style="flex:1;">tool_id_T03</code> <b>0.221</b></li>
-          <li><code style="flex:1;">tool_id_T01</code> <b>0.197</b></li>
-          <li><code style="flex:1;">develop_time_s</code> <b>0.072</b></li>
-          <li><code style="flex:1;">tool_id_T02</code> <b>0.071</b></li>
-        </ul>
-      </div>
-    </div>
-    <div class="insight">
-      <strong>해석 및 결론</strong><br>
-      Positive PR은 XGBoost+Optuna로 R² <b>0.8207</b>을 달성했습니다. 노광량(<code>exposure_dose</code>)과 설비 편차(<code>tool_id</code>)가 CD 예측의 핵심 변수입니다.<br><br>
-      Negative PR은 5가지 모든 알고리즘에서 R²가 0.52~0.58 구간으로 수렴합니다. 이는 알고리즘의 문제가 아닌 <b>데이터 한계(Performance Ceiling)</b>입니다. 학습 곡선이 수렴하지 않아 추가 데이터(설비 내부 센서, 챔버 로그)가 확보되어야 R²를 의미 있게 개선할 수 있습니다.
     </div>
   </div>
 </section>
