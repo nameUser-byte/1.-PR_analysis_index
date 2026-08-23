@@ -136,7 +136,7 @@ def render_imp_list(imp_series):
     return html
 
 # Read existing HTML to replace only the Machine Learning section
-with open('analysis_index.html', 'r', encoding='utf-8') as f:
+with open('index.html', 'r', encoding='utf-8') as f:
     full_html = f.read()
 
 import re
@@ -177,7 +177,7 @@ ml_section = f"""<section id="machine-learning">
 
 new_html = re.sub(r'<section id="machine-learning">.*?</section>', ml_section, full_html, flags=re.DOTALL)
 
-with open('analysis_index.html', 'w', encoding='utf-8') as f:
+with open('index.html', 'w', encoding='utf-8') as f:
     f.write(new_html)
 
 print(f"Positive R2: {results_html['POSITIVE']['r2']:.4f}")

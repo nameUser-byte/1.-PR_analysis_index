@@ -1,6 +1,6 @@
 """
 보고서 HTML 전면 재구성 스크립트
-모든 개선사항(A,B,C)을 한 번에 반영하여 새로운 analysis_index.html을 생성합니다.
+모든 개선사항(A,B,C)을 한 번에 반영하여 새로운 index.html을 생성합니다.
 """
 import pandas as pd
 import numpy as np
@@ -68,10 +68,10 @@ def render_corr_split(corr_series):
 
 # Model comparison data
 model_results = {
-    'POSITIVE': {'Random Forest': 0.7659, 'XGBoost': 0.7725, 'LightGBM': 0.7923,
-                 'Stacking Ensemble': 0.8056, 'XGBoost + Optuna': 0.8158},
-    'NEGATIVE': {'Random Forest': 0.5435, 'XGBoost': 0.5622, 'LightGBM': 0.5155,
-                 'Stacking Ensemble': 0.5752, 'XGBoost + Optuna': 0.5490}
+    'POSITIVE': {'Random Forest': 0.8117, 'XGBoost': 0.7954, 'LightGBM': 0.8035,
+                 'Stacking Ensemble': 0.8150, 'XGBoost + Optuna': 0.8207},
+    'NEGATIVE': {'Random Forest': 0.7434, 'XGBoost': 0.7382, 'LightGBM': 0.7884,
+                 'Stacking Ensemble': 0.7757, 'XGBoost + Optuna': 0.7810}
 }
 
 head_html = df.head(5).to_html(classes='data-table', index=False, border=0)
@@ -408,32 +408,32 @@ footer{padding:40px 28px;text-align:center;color:var(--text-faint);
         <tbody>
           <tr style="border-bottom:1px solid var(--border-soft);">
             <td style="padding:10px 14px;">Random Forest</td>
-            <td style="padding:10px 14px;text-align:center;">0.7659</td>
-            <td style="padding:10px 14px;text-align:center;">0.5435</td>
+            <td style="padding:10px 14px;text-align:center;">0.8117</td>
+            <td style="padding:10px 14px;text-align:center;">0.7434</td>
             <td style="padding:10px 14px;color:var(--text-dim);">독립 트리 배깅(Bagging), 과적합 강건</td>
           </tr>
           <tr style="border-bottom:1px solid var(--border-soft);">
             <td style="padding:10px 14px;">XGBoost</td>
-            <td style="padding:10px 14px;text-align:center;">0.7725</td>
-            <td style="padding:10px 14px;text-align:center;">0.5622</td>
+            <td style="padding:10px 14px;text-align:center;">0.7954</td>
+            <td style="padding:10px 14px;text-align:center;">0.7382</td>
             <td style="padding:10px 14px;color:var(--text-dim);">잔차 순차 학습(Boosting), L1/L2 정규화</td>
           </tr>
           <tr style="border-bottom:1px solid var(--border-soft);">
             <td style="padding:10px 14px;">LightGBM</td>
-            <td style="padding:10px 14px;text-align:center;">0.7923</td>
+            <td style="padding:10px 14px;text-align:center;">0.8035</td>
             <td style="padding:10px 14px;text-align:center;color:var(--danger);">0.5155 ▼</td>
             <td style="padding:10px 14px;color:var(--text-dim);">Leaf-wise 성장, 대용량 고속 — 소규모 불리</td>
           </tr>
           <tr style="border-bottom:1px solid var(--border-soft);">
             <td style="padding:10px 14px;"><b>Stacking Ensemble</b></td>
-            <td style="padding:10px 14px;text-align:center;">0.8056</td>
+            <td style="padding:10px 14px;text-align:center;">0.8150</td>
             <td style="padding:10px 14px;text-align:center;color:var(--amber);font-weight:700;">0.5752 ★</td>
             <td style="padding:10px 14px;color:var(--text-dim);">RF+XGB+LGBM → Ridge CV 최종 예측</td>
           </tr>
           <tr style="background:var(--cyan-soft);">
             <td style="padding:10px 14px;"><b>XGBoost + Optuna</b></td>
             <td style="padding:10px 14px;text-align:center;color:var(--cyan);font-weight:700;">0.8158 ★</td>
-            <td style="padding:10px 14px;text-align:center;">0.5490</td>
+            <td style="padding:10px 14px;text-align:center;">0.7810</td>
             <td style="padding:10px 14px;color:var(--text-dim);">베이지안 탐색 50 trial, 자동 최적 파라미터</td>
           </tr>
         </tbody>
@@ -470,7 +470,7 @@ footer{padding:40px 28px;text-align:center;color:var(--text-faint);
       <div class="card border-l-cy">
         <span class="tag">POSITIVE PR — 최종 선택</span>
         <h4>XGBoost + Optuna 베이지안 튜닝</h4>
-        <div class="metric-box">R² Score: <strong>0.8158</strong><br>depth=3, lr=0.022, n=950</div>
+        <div class="metric-box">R² Score: <strong>0.8207</strong><br>depth=3, lr=0.022, n=950</div>
         <ul class="check-list" style="margin-top:14px;">
           <li><code style="flex:1;">tool_id_T01</code> <b>0.256</b></li>
           <li><code style="flex:1;">exposure_dose_mj_cm2</code> <b>0.181</b></li>
@@ -482,7 +482,7 @@ footer{padding:40px 28px;text-align:center;color:var(--text-faint);
       <div class="card border-l-am">
         <span class="tag" style="color:var(--amber);">NEGATIVE PR — 최종 선택</span>
         <h4>Stacking Ensemble (RF + XGB + LGBM)</h4>
-        <div class="metric-box">R² Score: <strong style="color:var(--amber);">0.5752</strong><br>Meta-learner: Ridge CV</div>
+        <div class="metric-box">R² Score: <strong style="color:var(--amber);">0.7757</strong><br>Meta-learner: Ridge CV</div>
         <ul class="check-list" style="margin-top:14px;">
           <li><code style="flex:1;">exposure_dose_mj_cm2</code> <b>0.309</b></li>
           <li><code style="flex:1;">tool_id_T03</code> <b>0.221</b></li>
@@ -494,7 +494,7 @@ footer{padding:40px 28px;text-align:center;color:var(--text-faint);
     </div>
     <div class="insight">
       <strong>해석 및 결론</strong><br>
-      Positive PR은 XGBoost+Optuna로 R² <b>0.8158</b>을 달성했습니다. 노광량(<code>exposure_dose</code>)과 설비 편차(<code>tool_id</code>)가 CD 예측의 핵심 변수입니다.<br><br>
+      Positive PR은 XGBoost+Optuna로 R² <b>0.8207</b>을 달성했습니다. 노광량(<code>exposure_dose</code>)과 설비 편차(<code>tool_id</code>)가 CD 예측의 핵심 변수입니다.<br><br>
       Negative PR은 5가지 모든 알고리즘에서 R²가 0.52~0.58 구간으로 수렴합니다. 이는 알고리즘의 문제가 아닌 <b>데이터 한계(Performance Ceiling)</b>입니다. 학습 곡선이 수렴하지 않아 추가 데이터(설비 내부 센서, 챔버 로그)가 확보되어야 R²를 의미 있게 개선할 수 있습니다.
     </div>
   </div>
@@ -621,6 +621,6 @@ document.querySelectorAll('nav.sec-nav a').forEach(a=>{
 </body>
 </html>"""
 
-with open('analysis_index.html', 'w', encoding='utf-8') as f:
+with open('index.html', 'w', encoding='utf-8') as f:
     f.write(html)
-print('analysis_index.html rebuilt successfully.')
+print('index.html rebuilt successfully.')
