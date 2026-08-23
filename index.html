@@ -87,8 +87,8 @@ section{padding:56px 0;border-bottom:1px solid var(--border-soft);}
 .pipeline{display:flex;gap:0;align-items:stretch;flex-wrap:wrap;margin:0 0 32px;}
 .pip-step{flex:1;min-width:140px;background:var(--surface);border:1px solid var(--border);
   padding:14px 16px;position:relative;}
-.pip-step:not(:first-child)::before{content:"→";position:absolute;left:-12px;top:50%;
-  transform:translateY(-50%);font-size:14px;color:var(--text-faint);}
+.pip-step:not(:first-child)::before{content:"\25B6";position:absolute;left:-6px;top:50%; text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff;
+  transform:translateY(-50%);font-size:14px;color:var(--cyan); z-index: 10;}
 .pip-step .n{font-family:var(--font-mono);font-size:10px;color:var(--cyan);margin-bottom:4px;}
 .pip-step .t{font-size:13px;font-weight:600;margin-bottom:3px;}
 .pip-step .d{font-size:11.5px;color:var(--text-dim);}
@@ -419,11 +419,11 @@ abbr[data-title]:hover::before {
     <div class="grid-2" style="margin-bottom:16px;">
       <div class="img-card">
         <img src="cd_dist.png" class="clickable" onclick="openModal(this.src)" alt="CD 분포 히스토그램">
-        <div class="img-caption"><h4>CD 분포 히스토그램</h4><p>Positive/Negative PR별 선폭 분포 비교. Positive는 50nm 부근에 집중, Negative는 분산이 큼.</p></div>
+        <div class="img-caption"><h4>CD 분포 히스토그램</h4><p>PR Tone별 임계치수(CD) 공정능력(Cpk) 비교 (Spec: 45~55nm).<br><b style="color:var(--cyan)">Positive PR:</b> Cpk = 0.55 (산포 양호)<br><b style="color:var(--amber)">Negative PR:</b> Cpk = 0.50 (산포 불량)<br>Negative 공정의 산포가 통계적으로 유의미하게 넓어 불량(FAIL) 발생 위험이 더 높습니다.</p></div>
       </div>
       <div class="img-card">
         <img src="cd_boxplot.png" class="clickable" onclick="openModal(this.src)" alt="CD 박스플롯">
-        <div class="img-caption"><h4>PR Tone별 CD 박스플롯</h4><p>두 그룹의 중앙값, IQR, 이상치(Outlier)를 통계적으로 비교.</p></div>
+        <div class="img-caption"><h4>PR Tone별 CD 박스플롯</h4><p>두 그룹의 중앙값은 ~50.3nm로 유사하나, Negative PR의 사분위수 범위(IQR) 및 극단적 이상치(Outlier)가 훨씬 많음을 통계적으로 확인했습니다.</p></div>
       </div>
     </div>
     <div class="img-card" style="margin-bottom:16px;">
