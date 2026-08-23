@@ -59,6 +59,9 @@ for idx in outlier_dose.index:
 median_dev = normal_df['developer_concentration_pct'].median()
 df.loc[df['developer_concentration_pct'] > 10, 'developer_concentration_pct'] = median_dev
 
+# 8. Target 변수(CD) 계측 불량 및 PR Tone 오기입 이상치(Outlier) 제거
+df = df[(df['resist_line_cd_nm'] >= 40) & (df['resist_line_cd_nm'] <= 60)]
+
 print(f"\nFinal shape after cleaning: {df.shape}")
 print("Missing values after cleaning:")
 print(df.isnull().sum()[df.isnull().sum() > 0])

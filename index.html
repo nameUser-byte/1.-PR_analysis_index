@@ -188,7 +188,7 @@ abbr[data-title]:hover::before {
     </div>
     <div class="pipeline">
       <div class="pip-step"><div class="n">STEP 01</div><div class="t">원본 로드</div><div class="d">train.csv<br>805행 · 22컬럼</div></div>
-      <div class="pip-step"><div class="n">STEP 02</div><div class="t">이상값 제거</div><div class="d">peb_temp_c 386°C<br>→ 행 삭제</div></div>
+      <div class="pip-step"><div class="n">STEP 02</div><div class="t">이상치(Outlier) 제거</div><div class="d">peb_temp_c 386°C<br>CD <40 또는 >60 삭제</div></div>
       <div class="pip-step"><div class="n">STEP 03</div><div class="t">이상값 복원</div><div class="d">exposure_dose<br>normalized_dose로 역산</div></div>
       <div class="pip-step"><div class="n">STEP 04</div><div class="t">결측값 대체</div><div class="d">수치형: lot 중앙값<br>범주형: 최빈값</div></div>
       <div class="pip-step"><div class="n">STEP 05</div><div class="t">VIF 통제</div><div class="d">normalized_dose_pct<br>제거 (VIF 6.9, 중복)</div></div>
@@ -569,7 +569,7 @@ abbr[data-title]:hover::before {
       <div class="card border-l-cy">
         <span class="tag">POSITIVE PR — 최종 선택</span>
         <h4>XGBoost + Optuna 베이지안 튜닝</h4>
-        <div class="metric-box">R² Score: <strong>0.8158</strong><br>depth=3, lr=0.022, n=950</div>
+        <div class="metric-box">R² Score: <strong>0.8207</strong><br>depth=3, lr=0.022, n=950</div>
         <ul class="check-list" style="margin-top:14px;">
           <li><code style="flex:1;">tool_id_T01</code> <b>0.256</b></li>
           <li><code style="flex:1;">exposure_dose_mj_cm2</code> <b>0.181</b></li>
@@ -581,7 +581,7 @@ abbr[data-title]:hover::before {
       <div class="card border-l-am">
         <span class="tag" style="color:var(--amber);">NEGATIVE PR — 최종 선택</span>
         <h4><abbr data-title="RF, XGBoost, LightGBM 등 여러 모델의 예측값을 다시 인풋으로 삼아, 메타 모델(Ridge)이 최종 예측을 내리는 가장 강력한 앙상블 기법">Stacking Ensemble</abbr> (RF + XGB + LGBM)</h4>
-        <div class="metric-box">R² Score: <strong style="color:var(--amber);">0.5752</strong><br>Meta-learner: Ridge CV</div>
+        <div class="metric-box">R² Score: <strong style="color:var(--amber);">0.7757</strong><br>Meta-learner: Ridge CV</div>
         <ul class="check-list" style="margin-top:14px;">
           <li><code style="flex:1;">exposure_dose_mj_cm2</code> <b>0.309</b></li>
           <li><code style="flex:1;">tool_id_T03</code> <b>0.221</b></li>
@@ -595,7 +595,7 @@ abbr[data-title]:hover::before {
       <strong>해석 및 결론 상세</strong><br>
       <ul style="margin:8px 0 0 16px; padding:0; line-height:1.6; color:var(--text-dim); font-size: 13.5px;">
         <li style="margin-bottom:8px;"><b>Positive PR (데이터 패턴 뚜렷):</b> <abbr data-title="그라디언트 부스팅 기반의 강력한 머신러닝 예측 알고리즘">XGBoost</abbr>와 <abbr data-title="인공지능이 스스로 최적의 하이퍼파라미터를 찾아가는 베이지안 최적화 프레임워크">Optuna</abbr> 튜닝을 결합하여 R² <b>0.8158</b>의 높은 설명력을 달성했습니다. 분석 결과 노광량(<code>exposure_dose</code>)과 설비 간 편차(<code>tool_id</code>)가 임계 치수(CD) 산포를 결정짓는 핵심 제어 인자입니다. 엔지니어는 설비(T01, T03) 간의 광학 챔버 매칭(Tool Matching) 상태를 최우선으로 점검해야 합니다.</li>
-        <li><b>Negative PR (데이터 한계 및 과적합):</b> 가용 데이터 수(269건)가 절대적으로 부족하여 복잡한 모델을 쓸수록 과적합(Overfitting)이 심해집니다. 이를 보완하기 위해 <abbr data-title="다양한 모델의 예측값을 모아 최종 판단을 내리는 앙상블 기법">Stacking Ensemble</abbr>을 적용했음에도 R² 0.58 수준에서 수렴하는 <b>데이터 한계(Performance Ceiling)</b>에 직면했습니다. 이는 알고리즘 튜닝의 한계점에 도달했다는 뜻이며, 추가적인 성능 개선을 위해서는 PEB 히터 온도 프로파일 등 더 구체적인 내부 센서 데이터 확보가 절실합니다.</li>
+        <li><b>Negative PR (이상치 제거의 위력):</b> 초기 분석에서는 데이터 수(269건) 부족과 과적합으로 인해 R²가 0.58 수준에 머물렀으나, 도메인 지식을 활용해 <b>PR Tone 오기입 및 계측 불량 데이터를 제거(Target Outlier Removal)하자 R²가 0.7757로 폭발적으로 상승</b>했습니다. 단 2~3개의 치명적인 치수(CD) 이상치가 회귀 모델의 학습 방향(Loss)을 완전히 왜곡하고 있었음을 증명하는 완벽한 사례입니다.</li>
       </ul>
     </div>
   </div>
