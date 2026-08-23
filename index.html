@@ -125,7 +125,17 @@ footer{padding:40px 28px;text-align:center;color:var(--text-faint);
 /* VIF badge */
 .vif-warn{display:inline-block;font-size:10px;background:#fef3c7;color:#92400e;
   border:1px solid #fcd34d;border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:middle;}
-abbr[data-title]{text-decoration:underline dotted;text-decoration-color:var(--cyan);cursor:help;}
+abbr[data-title]{text-decoration:underline dotted;text-decoration-color:var(--cyan);cursor:help;position:relative;}
+abbr[data-title]:hover::after {
+  content: attr(data-title); position: absolute; bottom: 130%; left: 50%; transform: translateX(-50%);
+  background: rgba(18,22,31,0.95); color: #fff; padding: 6px 10px; border-radius: 4px; font-size: 11.5px;
+  white-space: pre-wrap; width: max-content; max-width: 200px; z-index: 1000; text-align: center;
+  line-height: 1.4; box-shadow: 0 4px 12px rgba(0,0,0,0.15); pointer-events: none;
+}
+abbr[data-title]:hover::before {
+  content: ""; position: absolute; bottom: 130%; left: 50%; transform: translate(-50%, 100%);
+  border: 5px solid transparent; border-top-color: rgba(18,22,31,0.95); z-index: 1000;
+}
 </style>
 </head>
 <body>

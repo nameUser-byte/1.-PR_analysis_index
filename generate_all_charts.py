@@ -96,6 +96,9 @@ for ax, tone, color in zip(axes, ['POSITIVE', 'NEGATIVE'], [CYAN, AMBER]):
     ax.set_title(f'{tone} PR — Process Variable Correlation Heatmap',
                  fontsize=11, color=color, pad=10)
     ax.tick_params(axis='x', rotation=45, labelsize=7.5)
+    for label in ax.get_xticklabels():
+        label.set_horizontalalignment('right')
+        label.set_rotation_mode('anchor')
     ax.tick_params(axis='y', rotation=0,  labelsize=7.5)
 plt.tight_layout(pad=2)
 plt.savefig('corr_heatmap.png', bbox_inches='tight')
