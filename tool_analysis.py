@@ -13,7 +13,7 @@ def generate_tool_analysis():
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
     
     # 1. CD Distribution by Tool ID (Boxplot)
-    sns.boxplot(data=df, x='tool_id', y='resist_line_cd_nm', hue='pr_tone', ax=axes[0], palette=['#0a7a86', '#a3610a'])
+    sns.boxplot(data=df, x='tool_id', y='resist_line_cd_nm', hue='pr_tone', ax=axes[0], palette=['#0a7a86', '#a3610a'], width=0.5, gap=0.1)
     axes[0].set_title('Tool ID 및 PR Tone별 CD(선폭) 분포', fontsize=14, fontweight='bold')
     axes[0].set_xlabel('장비 (Tool ID)')
     axes[0].set_ylabel('CD (nm)')
@@ -23,7 +23,7 @@ def generate_tool_analysis():
     fail_rates = df.groupby(['tool_id', 'pr_tone'])['spec_pass'].apply(lambda x: (x == 'FAIL').mean() * 100).reset_index()
     fail_rates.rename(columns={'spec_pass': 'fail_rate_pct'}, inplace=True)
     
-    sns.barplot(data=fail_rates, x='tool_id', y='fail_rate_pct', hue='pr_tone', ax=axes[1], palette=['#0a7a86', '#a3610a'])
+    sns.barplot(data=fail_rates, x='tool_id', y='fail_rate_pct', hue='pr_tone', ax=axes[1], palette=['#0a7a86', '#a3610a'], width=0.5, gap=0.1)
     axes[1].set_title('Tool ID 및 PR Tone별 불량(FAIL) 발생률', fontsize=14, fontweight='bold')
     axes[1].set_xlabel('장비 (Tool ID)')
     axes[1].set_ylabel('FAIL 비율 (%)')
